@@ -4,6 +4,14 @@ Projeto de estudo em PHP puro + MySQL, criado como amostra de um portal instituc
 
 O objetivo deste repositorio e demonstrar organizacao de estrutura, modelagem inicial de banco, fluxo de autenticacao e manutencao de conteudo institucional, pensando em um site que pode evoluir para um sistema real no futuro.
 
+## Destaques do projeto
+
+- portal institucional com Home, paginas internas e area restrita
+- painel administrativo com gerenciamento de banners, noticias, associados e documentos
+- autenticacao separada para administrador e associado
+- integracao com MySQL para dados principais
+- estrutura em PHP puro, pensada para estudo e evolucao gradual
+
 ## Visao geral
 
 O projeto simula o portal de uma entidade institucional, com:
@@ -138,6 +146,14 @@ Este projeto nao foi pensado como produto final pronto para producao, e sim como
 - criar painel administrativo funcional
 - integrar formularios, autenticacao e uploads
 - transformar uma ideia visual em uma aplicacao navegavel
+
+## O que este projeto demonstra
+
+- capacidade de sair de uma referencia visual e transformar em uma aplicacao funcional
+- organizacao de um pequeno sistema full stack com front-end, regras de negocio e banco de dados
+- criacao de painel administrativo para alimentar o conteudo do site
+- preocupacao com separacao entre ambiente de estudo e configuracoes sensiveis
+- evolucao incremental do projeto com foco em aprendizado pratico
 
 ## Pontos de seguranca que ainda faltariam para producao
 
