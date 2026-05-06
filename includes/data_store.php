@@ -439,9 +439,22 @@ function store_uploaded_pdf(array $file, string $prefix): string
         throw new RuntimeException('Seleciona um arquivo PDF valido.');
     }
 
+    if (!is_uploaded_file((string) ($file['tmp_name'] ?? ''))) {
+        throw new RuntimeException('Upload invalido.');
+    }
+
+    if ((int) ($file['size'] ?? 0) > 5 * 1024 * 1024) {
+        throw new RuntimeException('O PDF deve ter no maximo 5MB.');
+    }
+
     $extension = strtolower((string) pathinfo((string) $file['name'], PATHINFO_EXTENSION));
     if ($extension !== 'pdf') {
         throw new RuntimeException('Somente arquivos PDF sao permitidos.');
+    }
+
+    $mime = (new finfo(FILEINFO_MIME_TYPE))->file((string) $file['tmp_name']);
+    if ($mime !== 'application/pdf') {
+        throw new RuntimeException('O arquivo enviado nao parece ser um PDF valido.');
     }
 
     $directory = UPLOADS_ROOT . '/documents';
@@ -464,10 +477,28 @@ function store_uploaded_image(array $file, string $prefix): string
         throw new RuntimeException('Seleciona uma imagem valida para o banner.');
     }
 
+    if (!is_uploaded_file((string) ($file['tmp_name'] ?? ''))) {
+        throw new RuntimeException('Upload invalido.');
+    }
+
+    if ((int) ($file['size'] ?? 0) > 3 * 1024 * 1024) {
+        throw new RuntimeException('A imagem deve ter no maximo 3MB.');
+    }
+
     $extension = strtolower((string) pathinfo((string) $file['name'], PATHINFO_EXTENSION));
     $allowed = ['jpg', 'jpeg', 'png', 'webp'];
 
     if (!in_array($extension, $allowed, true)) {
+        throw new RuntimeException('Somente imagens JPG, PNG ou WEBP sao permitidas.');
+    }
+
+    $imageInfo = getimagesize((string) $file['tmp_name']);
+    if ($imageInfo === false) {
+        throw new RuntimeException('O arquivo enviado nao parece ser uma imagem valida.');
+    }
+
+    $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!in_array((string) ($imageInfo['mime'] ?? ''), $allowedMimes, true)) {
         throw new RuntimeException('Somente imagens JPG, PNG ou WEBP sao permitidas.');
     }
 
@@ -774,14 +805,24 @@ function authenticate_admin(string $username, string $password): ?array
     return password_verify($password, $admin['senha_hash']) ? $admin : null;
 }
 
+function require_valid_password(string $password): void
+{
+    if (strlen($password) < 8) {
+        throw new RuntimeException('A senha deve ter pelo menos 8 caracteres.');
+    }
+}
+
 function create_admin(array $input): void
 {
+    $password = (string) ($input['senha'] ?? '');
+    require_valid_password($password);
+
     $stmt = db()->prepare('INSERT INTO admins (nome, usuario, email, senha_hash, ativo) VALUES (:nome, :usuario, :email, :senha_hash, 1)');
     $stmt->execute([
         'nome' => trim((string) ($input['nome'] ?? '')),
         'usuario' => trim((string) ($input['usuario'] ?? '')),
         'email' => trim((string) ($input['email'] ?? '')),
-        'senha_hash' => password_hash((string) ($input['senha'] ?? ''), PASSWORD_DEFAULT),
+        'senha_hash' => password_hash($password, PASSWORD_DEFAULT),
     ]);
 }
 
@@ -817,6 +858,7 @@ function update_admin(array $input): void
         return;
     }
 
+    require_valid_password($password);
     $stmt = db()->prepare('UPDATE admins SET nome = :nome, usuario = :usuario, email = :email, senha_hash = :senha_hash WHERE id = :id');
     $stmt->execute([
         'id' => $adminId,
@@ -839,12 +881,15 @@ function delete_admin(int $adminId, int $currentAdminId): void
 
 function create_associate(array $input): void
 {
+    $password = (string) ($input['senha'] ?? '');
+    require_valid_password($password);
+
     $stmt = db()->prepare('INSERT INTO associates (request_id, nome, cpf, email, senha_hash, status, liberado_area_restrita) VALUES (NULL, :nome, :cpf, :email, :senha_hash, "ativo", 1)');
     $stmt->execute([
         'nome' => trim((string) ($input['nome'] ?? '')),
         'cpf' => sanitize_cpf((string) ($input['cpf'] ?? '')),
         'email' => trim((string) ($input['email'] ?? '')),
-        'senha_hash' => password_hash((string) ($input['senha'] ?? ''), PASSWORD_DEFAULT),
+        'senha_hash' => password_hash($password, PASSWORD_DEFAULT),
     ]);
 }
 
@@ -871,6 +916,7 @@ function update_associate(array $input): void
         return;
     }
 
+    require_valid_password($password);
     $stmt = db()->prepare('UPDATE associates SET nome = :nome, cpf = :cpf, email = :email, senha_hash = :senha_hash, status = "ativo", liberado_area_restrita = 1 WHERE id = :id');
     $stmt->execute([
         'id' => $associateId,
@@ -948,6 +994,8 @@ function get_association_requests(): array
 
 function approve_association_request(int $requestId, string $password, int $adminId): void
 {
+    require_valid_password($password);
+
     $pdo = db();
     $stmt = $pdo->prepare('SELECT * FROM association_requests WHERE id = :id LIMIT 1');
     $stmt->execute(['id' => $requestId]);

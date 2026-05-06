@@ -8,6 +8,7 @@ require_once SITE_ROOT . '/includes/layout.php';
 $data = load_site_data();
 $home = $data['home'];
 $submitted = false;
+$error = '';
 $formData = [
     'nome' => '',
     'funcao' => '',
@@ -34,33 +35,40 @@ $formData = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $submitted = true;
 
-    foreach ($formData as $field => $value) {
-        $formData[$field] = trim((string) ($_POST[$field] ?? ''));
-    }
+    try {
+        verify_csrf_token();
 
-    if ($formData['cpf'] !== '') {
-        $formData['cpf'] = format_cpf($formData['cpf']);
-    }
-
-    if ($formData['cep'] !== '') {
-        $formData['cep'] = preg_replace('/^(\d{5})(\d{3})$/', '$1-$2', sanitize_cpf($formData['cep'])) ?? $formData['cep'];
-    }
-
-    if ($formData['telefone'] !== '') {
-        $digits = sanitize_cpf($formData['telefone']);
-        if (strlen($digits) === 11) {
-            $formData['telefone'] = sprintf('(%s) %s-%s', substr($digits, 0, 2), substr($digits, 2, 5), substr($digits, 7, 4));
+        foreach ($formData as $field => $value) {
+            $formData[$field] = trim((string) ($_POST[$field] ?? ''));
         }
-    }
 
-    if ($formData['fax'] !== '') {
-        $digits = sanitize_cpf($formData['fax']);
-        if (strlen($digits) === 10) {
-            $formData['fax'] = sprintf('(%s) %s-%s', substr($digits, 0, 2), substr($digits, 2, 4), substr($digits, 6, 4));
+        if ($formData['cpf'] !== '') {
+            $formData['cpf'] = format_cpf($formData['cpf']);
         }
-    }
 
-    create_association_request($formData);
+        if ($formData['cep'] !== '') {
+            $formData['cep'] = preg_replace('/^(\d{5})(\d{3})$/', '$1-$2', sanitize_cpf($formData['cep'])) ?? $formData['cep'];
+        }
+
+        if ($formData['telefone'] !== '') {
+            $digits = sanitize_cpf($formData['telefone']);
+            if (strlen($digits) === 11) {
+                $formData['telefone'] = sprintf('(%s) %s-%s', substr($digits, 0, 2), substr($digits, 2, 5), substr($digits, 7, 4));
+            }
+        }
+
+        if ($formData['fax'] !== '') {
+            $digits = sanitize_cpf($formData['fax']);
+            if (strlen($digits) === 10) {
+                $formData['fax'] = sprintf('(%s) %s-%s', substr($digits, 0, 2), substr($digits, 2, 4), substr($digits, 6, 4));
+            }
+        }
+
+        create_association_request($formData);
+    } catch (Throwable $exception) {
+        $submitted = false;
+        $error = $exception->getMessage();
+    }
 }
 
 render_header('Sindi Amostra | Associe-se', $home);
@@ -95,8 +103,12 @@ render_header('Sindi Amostra | Associe-se', $home);
             <?php if ($submitted): ?>
                 <div class="flash-success">Ficha enviada com sucesso. Agora ela fica aguardando liberacao na area administrativa.</div>
             <?php endif; ?>
+            <?php if ($error !== ''): ?>
+                <div class="flash-error"><?= h($error); ?></div>
+            <?php endif; ?>
 
             <form method="post" class="signup-form">
+                <?= csrf_field(); ?>
                 <div class="signup-table">
                     <div class="signup-row">
                         <label for="nome">Nome:</label>

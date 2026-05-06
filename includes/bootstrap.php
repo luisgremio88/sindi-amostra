@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+session_name('sindi_amostra_session');
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'httponly' => true,
+    'samesite' => 'Lax',
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+]);
 session_start();
 
 define('SITE_ROOT', dirname(__DIR__));
@@ -54,6 +62,86 @@ function redirect_to(string $path): void
 {
     header('Location: ' . asset_url($path));
     exit;
+}
+
+function csrf_token(): string
+{
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+
+    return (string) $_SESSION['csrf_token'];
+}
+
+function csrf_field(): string
+{
+    return '<input type="hidden" name="csrf_token" value="' . h(csrf_token()) . '">';
+}
+
+function verify_csrf_token(): void
+{
+    $token = (string) ($_POST['csrf_token'] ?? '');
+    $sessionToken = (string) ($_SESSION['csrf_token'] ?? '');
+
+    if ($token === '' || $sessionToken === '' || !hash_equals($sessionToken, $token)) {
+        throw new RuntimeException('Sessao expirada ou formulario invalido. Recarrega a pagina e tenta novamente.');
+    }
+}
+
+function login_attempt_key(string $login): string
+{
+    return strtolower(trim($login)) ?: 'anonimo';
+}
+
+function can_attempt_login(string $login): bool
+{
+    $key = login_attempt_key($login);
+    $attempt = $_SESSION['login_attempts'][$key] ?? ['count' => 0, 'last' => 0];
+    $count = (int) ($attempt['count'] ?? 0);
+    $last = (int) ($attempt['last'] ?? 0);
+
+    if ($count < 5) {
+        return true;
+    }
+
+    return (time() - $last) > 900;
+}
+
+function record_failed_login(string $login): void
+{
+    $key = login_attempt_key($login);
+    $attempt = $_SESSION['login_attempts'][$key] ?? ['count' => 0, 'last' => 0];
+
+    $_SESSION['login_attempts'][$key] = [
+        'count' => (int) ($attempt['count'] ?? 0) + 1,
+        'last' => time(),
+    ];
+}
+
+function clear_failed_login(string $login): void
+{
+    $key = login_attempt_key($login);
+    unset($_SESSION['login_attempts'][$key]);
+}
+
+function finish_login(string $sessionKey, int $userId, string $login): void
+{
+    session_regenerate_id(true);
+    $_SESSION[$sessionKey] = $userId;
+    unset($_SESSION['csrf_token']);
+    clear_failed_login($login);
+}
+
+function logout_user(): void
+{
+    $_SESSION = [];
+
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'] ?? '', (bool) $params['secure'], (bool) $params['httponly']);
+    }
+
+    session_destroy();
 }
 
 function format_currency_br(float $value): string

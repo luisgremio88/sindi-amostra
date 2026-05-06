@@ -20,6 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     try {
+        verify_csrf_token();
+
         if ($action === 'update_home') {
             save_site_home([
                 'site_name' => $_POST['site_name'] ?? '',
@@ -204,11 +206,19 @@ render_header('Sindi Amostra | Dashboard', $home);
         <nav class="admin-nav">
             <a href="#admin-home">Home</a>
             <a href="#admin-acessos">Acessos</a>
-            <a href="#admin-institucional">Institucional</a>
-            <a href="#admin-documentos">Documentos</a>
-            <a href="#admin-conteudo">Conteudo</a>
+            <a href="#admin-institucional">Portal</a>
             <a href="#admin-manutencao">Manutencao</a>
         </nav>
+
+        <div class="admin-quick-menu" aria-label="Acessos rapidos do painel">
+            <strong>Acesso rapido</strong>
+            <a href="#admin-home">Banners</a>
+            <a href="#admin-acessos">Fichas</a>
+            <a href="#admin-associados">Associados</a>
+            <a href="#admin-administradores">Admins</a>
+            <a href="#admin-documentos">Documentos</a>
+            <a href="#admin-conteudo">Noticias e boletos</a>
+        </div>
 
         <div class="admin-overview">
             <article class="admin-stat">
@@ -249,6 +259,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                 <section class="panel">
                     <h3>Textos principais da Home</h3>
                     <form method="post" class="form-grid">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="update_home">
 
                         <div class="field">
@@ -276,6 +287,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                     <h3>Banners da Home</h3>
                     <p class="hint">A Home aceita ate 3 banners e troca automaticamente a cada 5 segundos.</p>
                     <form method="post" class="form-grid" enctype="multipart/form-data">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="add_home_banner">
 
                         <div class="field">
@@ -312,6 +324,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                     <h3>Noticias em destaque</h3>
                     <p class="hint">Esse bloco menor da Home aceita ate 4 imagens e tambem troca automaticamente.</p>
                     <form method="post" class="form-grid" enctype="multipart/form-data">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="add_featured_image">
 
                         <div class="field">
@@ -341,6 +354,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                     <h3>Galeria de fotos</h3>
                     <p class="hint">A galeria da Home mostra ate 3 imagens lado a lado.</p>
                     <form method="post" class="form-grid" enctype="multipart/form-data">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="add_gallery_image">
 
                         <div class="field">
@@ -389,7 +403,8 @@ render_header('Sindi Amostra | Dashboard', $home);
                                 <td><?= (int) $item['sort_order']; ?></td>
                                 <td>
                                     <form method="post">
-                                        <input type="hidden" name="action" value="delete_home_banner">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="action" value="delete_home_banner">
                                         <input type="hidden" name="id" value="<?= (int) $item['id']; ?>">
                                         <button class="link-danger" type="submit">Excluir</button>
                                     </form>
@@ -420,7 +435,8 @@ render_header('Sindi Amostra | Dashboard', $home);
                                 <td><?= (int) $item['sort_order']; ?></td>
                                 <td>
                                     <form method="post">
-                                        <input type="hidden" name="action" value="delete_featured_image">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="action" value="delete_featured_image">
                                         <input type="hidden" name="id" value="<?= (int) $item['id']; ?>">
                                         <button class="link-danger" type="submit">Excluir</button>
                                     </form>
@@ -453,7 +469,8 @@ render_header('Sindi Amostra | Dashboard', $home);
                                 <td><?= (int) $item['sort_order']; ?></td>
                                 <td>
                                     <form method="post">
-                                        <input type="hidden" name="action" value="delete_gallery_image">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="action" value="delete_gallery_image">
                                         <input type="hidden" name="id" value="<?= (int) $item['id']; ?>">
                                         <button class="link-danger" type="submit">Excluir</button>
                                     </form>
@@ -474,10 +491,29 @@ render_header('Sindi Amostra | Dashboard', $home);
                 </div>
             </div>
 
+            <div class="admin-flow">
+                <article>
+                    <span>1</span>
+                    <strong>Conferir fichas</strong>
+                    <p>Veja quem pediu associacao e libere ou rejeite o acesso.</p>
+                </article>
+                <article>
+                    <span>2</span>
+                    <strong>Manter associados</strong>
+                    <p>Cadastre, edite ou bloqueie quem entra na area restrita.</p>
+                </article>
+                <article>
+                    <span>3</span>
+                    <strong>Cuidar dos admins</strong>
+                    <p>Mantenha poucos usuarios administrativos e revise acessos.</p>
+                </article>
+            </div>
+
             <div class="admin-grid">
                 <section class="panel">
                     <h3><?= $editingAdmin !== null ? 'Editar administrador' : 'Cadastrar administrador'; ?></h3>
                     <form method="post" class="form-grid">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="<?= $editingAdmin !== null ? 'update_admin' : 'add_admin'; ?>">
                         <?php if ($editingAdmin !== null): ?>
                             <input type="hidden" name="admin_id" value="<?= (int) $editingAdmin['id']; ?>">
@@ -517,6 +553,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                 <section class="panel">
                     <h3><?= $editingAssociate !== null ? 'Editar associado' : 'Cadastrar associado'; ?></h3>
                     <form method="post" class="form-grid">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="<?= $editingAssociate !== null ? 'update_associate' : 'add_associate'; ?>">
                         <?php if ($editingAssociate !== null): ?>
                             <input type="hidden" name="associate_id" value="<?= (int) $editingAssociate['id']; ?>">
@@ -582,13 +619,15 @@ render_header('Sindi Amostra | Dashboard', $home);
                                 <td>
                                     <?php if (($item['status'] ?? '') === 'pendente'): ?>
                                         <form method="post" class="form-grid compact-form">
-                                            <input type="hidden" name="action" value="approve_request">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="action" value="approve_request">
                                             <input type="hidden" name="request_id" value="<?= (int) $item['id']; ?>">
                                             <input name="associate_password" type="text" placeholder="Senha inicial">
                                             <button class="button button-primary button-small" type="submit">Liberar acesso</button>
                                         </form>
                                         <form method="post" class="top-gap-sm">
-                                            <input type="hidden" name="action" value="reject_request">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="action" value="reject_request">
                                             <input type="hidden" name="request_id" value="<?= (int) $item['id']; ?>">
                                             <button class="link-danger" type="submit">Rejeitar</button>
                                         </form>
@@ -602,7 +641,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                     </table>
                 </section>
 
-                <section class="panel table-panel">
+                <section class="panel table-panel" id="admin-associados">
                     <h3>Associados liberados</h3>
                     <table>
                         <thead>
@@ -628,7 +667,8 @@ render_header('Sindi Amostra | Dashboard', $home);
                                             <svg viewBox="0 0 24 24" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm17.71-10.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.79Z" fill="currentColor"/></svg>
                                         </a>
                                         <form method="post">
-                                            <input type="hidden" name="action" value="delete_associate">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="action" value="delete_associate">
                                             <input type="hidden" name="id" value="<?= (int) $item['id']; ?>">
                                             <button class="icon-button danger" type="submit" aria-label="Excluir associado">
                                                 <svg viewBox="0 0 24 24" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2h4v2H4V6h4l1-2Z" fill="currentColor"/></svg>
@@ -644,7 +684,7 @@ render_header('Sindi Amostra | Dashboard', $home);
             </div>
 
             <div class="admin-grid top-gap">
-                <section class="panel table-panel admin-grid-full">
+                <section class="panel table-panel admin-grid-full" id="admin-administradores">
                     <h3>Administradores</h3>
                     <table>
                         <thead>
@@ -670,7 +710,8 @@ render_header('Sindi Amostra | Dashboard', $home);
                                             <svg viewBox="0 0 24 24" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm17.71-10.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.79Z" fill="currentColor"/></svg>
                                         </a>
                                         <form method="post">
-                                            <input type="hidden" name="action" value="delete_admin">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="action" value="delete_admin">
                                             <input type="hidden" name="id" value="<?= (int) $item['id']; ?>">
                                             <button class="icon-button danger" type="submit" aria-label="Excluir administrador">
                                                 <svg viewBox="0 0 24 24" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2h4v2H4V6h4l1-2Z" fill="currentColor"/></svg>
@@ -698,6 +739,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                 <section class="panel">
                     <h3>Conteudo institucional</h3>
                     <form method="post" class="form-grid">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="save_institutional_page">
                         <input type="hidden" name="slug" value="quem-somos">
                         <div class="field">
@@ -714,6 +756,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                     </form>
 
                     <form method="post" class="form-grid top-gap">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="save_institutional_page">
                         <input type="hidden" name="slug" value="diretoria">
                         <div class="field">
@@ -730,6 +773,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                     </form>
 
                     <form method="post" class="form-grid top-gap">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="save_institutional_page">
                         <input type="hidden" name="slug" value="conselho-fiscal">
                         <div class="field">
@@ -749,6 +793,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                 <section class="panel">
                     <h3>Cadastrar representante</h3>
                     <form method="post" class="form-grid">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="add_representative">
 
                         <div class="field">
@@ -809,7 +854,8 @@ render_header('Sindi Amostra | Dashboard', $home);
                                     </td>
                                     <td>
                                         <form method="post">
-                                            <input type="hidden" name="action" value="delete_representative">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="action" value="delete_representative">
                                             <input type="hidden" name="id" value="<?= (int) $item['id']; ?>">
                                             <button class="link-danger" type="submit">Excluir</button>
                                         </form>
@@ -835,6 +881,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                 <section class="panel">
                     <h3>Subir PDF anual</h3>
                     <form method="post" class="form-grid" enctype="multipart/form-data">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="add_annual_document">
 
                         <div class="field">
@@ -888,7 +935,8 @@ render_header('Sindi Amostra | Dashboard', $home);
                                 <td><?= h($item['year_label']); ?></td>
                                 <td>
                                     <form method="post">
-                                        <input type="hidden" name="action" value="delete_annual_document">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="action" value="delete_annual_document">
                                         <input type="hidden" name="id" value="<?= (int) $item['id']; ?>">
                                         <button class="link-danger" type="submit">Excluir</button>
                                     </form>
@@ -913,6 +961,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                 <section class="panel">
                     <h3>Cadastrar noticia</h3>
                     <form method="post" class="form-grid">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="add_news">
 
                         <div class="field">
@@ -946,6 +995,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                 <section class="panel">
                     <h3>Cadastrar boleto</h3>
                     <form method="post" class="form-grid">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="add_invoice">
 
                         <div class="field">
@@ -1018,7 +1068,8 @@ render_header('Sindi Amostra | Dashboard', $home);
                                 <td><?= h($item['date']); ?></td>
                                 <td>
                                     <form method="post">
-                                        <input type="hidden" name="action" value="delete_news">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="action" value="delete_news">
                                         <input type="hidden" name="id" value="<?= (int) $item['id']; ?>">
                                         <button class="link-danger" type="submit">Excluir</button>
                                     </form>
@@ -1050,7 +1101,8 @@ render_header('Sindi Amostra | Dashboard', $home);
                                 <td><span class="badge"><?= h($item['status']); ?></span></td>
                                 <td>
                                     <form method="post">
-                                        <input type="hidden" name="action" value="delete_invoice">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="action" value="delete_invoice">
                                         <input type="hidden" name="id" value="<?= (int) $item['id']; ?>">
                                         <button class="link-danger" type="submit">Excluir</button>
                                     </form>
@@ -1076,6 +1128,7 @@ render_header('Sindi Amostra | Dashboard', $home);
                     <h3>Restaurar dados de exemplo</h3>
                     <p class="hint">Usa essa acao somente quando quiser voltar o portal para o estado inicial de demonstracao.</p>
                     <form method="post" class="actions top-gap-sm">
+                        <?= csrf_field(); ?>
                         <input type="hidden" name="action" value="reset_data">
                         <button class="button button-secondary dark" type="submit">Restaurar dados</button>
                     </form>

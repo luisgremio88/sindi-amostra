@@ -2,5 +2,6 @@ config/database.local.php
 .env
 .env.*
 storage/site-data.json
-uploads/
+uploads/*
+!uploads/.htaccess
 *.log

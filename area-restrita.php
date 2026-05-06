@@ -18,22 +18,33 @@ $data = load_site_data();
 $home = $data['home'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $login = trim((string) ($_POST['login'] ?? ''));
-    $password = trim((string) ($_POST['password'] ?? ''));
+    try {
+        verify_csrf_token();
 
-    $associate = authenticate_associate($login, $password);
-    if ($associate !== null) {
-        $_SESSION['associate_id'] = (int) $associate['id'];
-        redirect_to('associado/dashboard.php');
+        $login = trim((string) ($_POST['login'] ?? ''));
+        $password = trim((string) ($_POST['password'] ?? ''));
+
+        if (!can_attempt_login($login)) {
+            throw new RuntimeException('Muitas tentativas de acesso. Aguarda alguns minutos e tenta novamente.');
+        }
+
+        $associate = authenticate_associate($login, $password);
+        if ($associate !== null) {
+            finish_login('associate_id', (int) $associate['id'], $login);
+            redirect_to('associado/dashboard.php');
+        }
+
+        $admin = authenticate_admin($login, $password);
+        if ($admin !== null) {
+            finish_login('admin_id', (int) $admin['id'], $login);
+            redirect_to('admin/dashboard.php');
+        }
+
+        record_failed_login($login);
+        $error = 'Acesso nao localizado. Se for associado, usa o CPF cadastrado. Se for administrador, usa o usuario ou e-mail.';
+    } catch (Throwable $exception) {
+        $error = $exception->getMessage();
     }
-
-    $admin = authenticate_admin($login, $password);
-    if ($admin !== null) {
-        $_SESSION['admin_id'] = (int) $admin['id'];
-        redirect_to('admin/dashboard.php');
-    }
-
-    $error = 'Acesso nao localizado. Se for associado, usa o CPF cadastrado. Se for administrador, usa o usuario ou e-mail.';
 }
 
 render_header('Sindi Amostra | Area Restrita', $home);
@@ -46,6 +57,7 @@ render_header('Sindi Amostra | Area Restrita', $home);
             <h2>Login</h2>
 
             <form method="post" class="form-grid">
+                <?= csrf_field(); ?>
                 <div class="field">
                     <label for="login">Login</label>
                     <input id="login" name="login" type="text" value="">

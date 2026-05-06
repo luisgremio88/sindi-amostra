@@ -17,38 +17,44 @@ $formData = [
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $formData = [
-        'nome' => trim((string) ($_POST['nome'] ?? '')),
-        'email' => trim((string) ($_POST['email'] ?? '')),
-        'assunto' => trim((string) ($_POST['assunto'] ?? '')),
-        'mensagem' => trim((string) ($_POST['mensagem'] ?? '')),
-    ];
+    try {
+        verify_csrf_token();
 
-    if ($formData['nome'] === '') {
-        $errors[] = 'Informe o nome.';
-    }
-
-    if ($formData['email'] === '' || !filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Informe um e-mail valido.';
-    }
-
-    if ($formData['assunto'] === '') {
-        $errors[] = 'Informe o assunto.';
-    }
-
-    if ($formData['mensagem'] === '') {
-        $errors[] = 'Escreva a mensagem.';
-    }
-
-    if ($errors === []) {
-        create_contact_message($formData);
-        $successMessage = 'Mensagem enviada e salva com sucesso.';
         $formData = [
-            'nome' => '',
-            'email' => '',
-            'assunto' => '',
-            'mensagem' => '',
+            'nome' => trim((string) ($_POST['nome'] ?? '')),
+            'email' => trim((string) ($_POST['email'] ?? '')),
+            'assunto' => trim((string) ($_POST['assunto'] ?? '')),
+            'mensagem' => trim((string) ($_POST['mensagem'] ?? '')),
         ];
+
+        if ($formData['nome'] === '') {
+            $errors[] = 'Informe o nome.';
+        }
+
+        if ($formData['email'] === '' || !filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'Informe um e-mail valido.';
+        }
+
+        if ($formData['assunto'] === '') {
+            $errors[] = 'Informe o assunto.';
+        }
+
+        if ($formData['mensagem'] === '') {
+            $errors[] = 'Escreva a mensagem.';
+        }
+
+        if ($errors === []) {
+            create_contact_message($formData);
+            $successMessage = 'Mensagem enviada e salva com sucesso.';
+            $formData = [
+                'nome' => '',
+                'email' => '',
+                'assunto' => '',
+                'mensagem' => '',
+            ];
+        }
+    } catch (Throwable $exception) {
+        $errors[] = $exception->getMessage();
     }
 }
 
@@ -106,6 +112,7 @@ render_header('Sindi Amostra | Contato', $home);
                 <p>Preencha os campos abaixo. A mensagem fica registrada no banco para depois ligarmos ao painel ou ao disparo real de e-mail.</p>
 
                 <form method="post" class="signup-form top-gap-sm">
+                    <?= csrf_field(); ?>
                     <div class="field">
                         <label for="nome">Nome</label>
                         <input id="nome" name="nome" type="text" value="<?= h($formData['nome']); ?>" required>
